@@ -17,7 +17,6 @@ type Customer struct {
 
 //variadic
 func main() {
-
 	Pesanan(
 		Customer{
 			NoHp:    "088212389",
@@ -66,3 +65,8 @@ func Pesanan(order ...Customer) {
 		}
 	}
 }
+
+// Guru, mau masukin nilai
+// object siswa, Nama, Kelas, Nilai (10,20,30,40,50,60,70,80,90,100)
+// Guru, input object siswa
+// programnya ngeprint nilai siswa (10~30 => D, 31~70 => C, 71 ~ 80 => B, >81 => A)
