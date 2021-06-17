@@ -31,3 +31,16 @@ terdapat banyak cara di :
 		})
 		e.Logger.Fatal(e.Start(":1323"))
   	}
+	
+package net/http untuk berbagai macam fitur untuk keperluan aplikasi berbasis web
+package github.com/labstack/echo/v4 untuk meng-import echo kedalam file project kita.
+untuk penjelasan selengkapnya bisa dilihat disini
+Sebuah objek router e dicetak lewat echo.New(). Lalu lewat objek router tersebut, dilakukan registrasi rute untuk / dengan method GET dan handler adalah closure handler. Lalu, mencetak output berupa String apabila tidak ada error akan menampilkan Hello, World. Terakhir, dari objek router di-start-lah sebuah web server pada port 2004.
+
+Cobalah run file nya:
+
+go run server.go
+
+Lalu jalankan di web browser anda:
+
+https://localhost:2004
