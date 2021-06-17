@@ -1,32 +1,32 @@
-𝑬𝑪𝑯𝑶 𝑭𝑹𝑨𝑴𝑬𝑾𝑶𝑹𝑲
+			𝑬𝑪𝑯𝑶 𝑭𝑹𝑨𝑴𝑬𝑾𝑶𝑹𝑲
 
-Instalasi 
+	Instalasi 
 
-terdapat banyak cara di :
-https://echo.labstack.com/
+	terdapat banyak cara di :
+	https://echo.labstack.com/
 
-pertama-tama
+	pertama-tama
 
- mkdir myapp && cd myapp
- go mod init myapp
- go get github.com/labstack/echo/v4
+ 	mkdir myapp && cd myapp
+ 	go mod init myapp
+ 	"go get github.com/labstack/echo/v4"
 
 1.Hello, World!
 
-  Create Main.go
+  	Create Main.go
 
-  package main
+  	package main
 
-  import (
-	 "net/http"
+  	import (
+	 	"net/http"
 	
-	 "github.com/labstack/echo/v4"
-  )
+	 	github.com/labstack/echo/v4
+  	)
 
-  func main() {
-	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.Logger.Fatal(e.Start(":1323"))
-  }
+  	func main() {
+		e := echo.New()
+		e.GET("/", func(c echo.Context) error {
+			return c.String(http.StatusOK, "Hello, World!")
+		})
+		e.Logger.Fatal(e.Start(":1323"))
+  	}
