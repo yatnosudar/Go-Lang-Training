@@ -3,7 +3,7 @@
 Echo adalah framework bahasa golang untuk pengembangan aplikasi web. Framework ini cukup terkenal di komunitas. 
 Echo merupakan framework besar, didalamnya terdapat banyak sekali dependensi.
 
-Instalasi 
+Installation
 
 terdapat banyak cara di :
 https://echo.labstack.com/
