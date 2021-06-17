@@ -7,9 +7,9 @@ https://echo.labstack.com/
 
 pertama-tama
 
-$ mkdir myapp && cd myapp
-$ go mod init myapp
-$ go get github.com/labstack/echo/v4
+ mkdir myapp && cd myapp
+ go mod init myapp
+ go get github.com/labstack/echo/v4
 
 1.Hello, World!
 
