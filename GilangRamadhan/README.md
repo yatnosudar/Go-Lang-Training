@@ -1,15 +1,15 @@
 			𝑬𝑪𝑯𝑶 𝑭𝑹𝑨𝑴𝑬𝑾𝑶𝑹𝑲
 
-	Instalasi 
+Instalasi 
 
-	terdapat banyak cara di :
+terdapat banyak cara di :
 	https://echo.labstack.com/
 
-	pertama-tama
+pertama-tama
 
  	mkdir myapp && cd myapp
  	go mod init myapp
- 	"go get github.com/labstack/echo/v4"
+"go get github.com/labstack/echo/v4"
 
 1.Hello, World!
 
@@ -20,7 +20,7 @@
   	import (
 	 	"net/http"
 	
-	 	github.com/labstack/echo/v4
+	 	"github.com/labstack/echo/v4"
   	)
 
   	func main() {
