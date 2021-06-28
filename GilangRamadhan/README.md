@@ -192,3 +192,98 @@ Lalu jalankan di web browser dengan:
 > https://localhost:1234/maps?id=30
 
 **?** berarti parameternya dan **=30** adalah value dari parameter tersebut, disini kita bisa mengisi nilai berapapun
+
+# Koneksi Database mysql
+
+kali ini kita akan mengisi data dengan yang ada pada database.
+
+pertama-tama kita harus membuat sebuah database terlebih dahulu, lalu membuat tabel. disini saya akan membuat database pegawai dengan kolom id, nama, alamat, dan telepon. dengan mengisi **id** yang dijadikan primary key dan auto increment pastinya, untuk yang lainnya bisa mengisi tipenya dengan format masing-masing, seperti nama dengan varchar, dan seterusnya dan diberi lenght untuk masing-masing kolom.
+
+kita memerlukan sebuah package dari go untuk me manage konfigurasi file dan environment namanya yaitu **gonfig**, untuk penjelasan selengkapnya bisa dilihat [KLIK](https:github.com/tkanos/gonfig). Langsung bisa di install di direktori project anda dengan
+
+```bash
+$ go get github.com/tkanos/gonfig
+```
+lalu kita akan membuat package config untuk lebih mempermudah
+
+**config.json**
+```json
+{
+    "DB_USERNAME" : "root",
+    "DB_PASSWORD" : "",
+    "DB_PORT" : "3306",
+    "DB_HOST" : "127.0.0.1",
+    "DB_NAME" : "echo_rest"
+}
+```
+file diatas adalah format default dari localhost kita, dan untuk **DB_NAME** bisa diisi dengan nama database masing-masing
+
+**config.go**
+```go
+package config
+
+import "github.com/tkanos/gonfig"
+
+type Configuration struct {
+	DB_USERNAME string
+	DB_PASSWORD string
+	DB_PORT     string
+	DB_HOST     string
+	DB_NAME     string
+}
+
+func GetConfig() Configuration {
+	conf := Configuration{}
+	gonfig.GetConf("config/config.json", &conf)
+	return conf
+}
+```
+
+diatas kita membuat struct seperti pada file config.json, gunanya agar bisa menampung dan memiliki value dari config.json. Lalu membuat func **GetConfig** yang memiliki return struct **Configuration**, membuat variabel conf dan menggunakan package **gonfing.GetConf** untuk mendapatkan value dari file config.json.
+
+lalu kita perlu menginstall mysql driver dari Golang, dokumentasi lengkap [disini](https://github.com/go-sql-driver/mysql). Langsung saja install di direktori
+```bash
+$ go get -u github.com/go-sql-driver/mysql
+```
+lalu buat file **db.go** di package db
+```go
+package db
+
+import (
+	"database/sql"
+	"echo/config"
+
+	_ "github.com/go-sql-driver/mysql"
+)
+
+var db *sql.DB
+var err error
+
+func Init() {
+	conf := config.GetConfig()
+
+	connectionString := conf.DB_USERNAME + ":" + conf.DB_PASSWORD + "@tcp(" + conf.DB_HOST + ":" + conf.DB_PORT + ")/" + conf.DB_NAME
+	db, err = sql.Open("mysql", connectionString)
+
+	if err != nil {
+		panic("connectionString error...")
+	}
+
+	err := db.Ping()
+
+	if err != nil {
+		panic("DSN invalid")
+	}
+}
+
+func CreateCon() *sql.DB {
+	return db
+}
+```
+mambuat variabel db dengan pointer sql.DB dari package dari package database sql golang, dan variabel err yang bervalue error. Lalu membuat func **Init** dan membuat var conf untuk mengambil konfigurasi yang di return dari file **config.go** sebelumnya, membuat **connectionString** atau DSN dengan format diatas. Dan menggunakannya dengan membuat variabel berisi **sql.Open("mysql", connectionString)** dari pkg sql-driver dengan driver mysql dan DSN dari connectionString diatas.
+Jika ada error langsung dihentikan dengan panic dan di cek dengan **db.Ping()** jika terdapat error pada DSN. Lalu membuat func **CreateCon** untuk mereturn instans dari db yang sudah di set di atas
+
+lalu memanggil function tersebut di file utama kita, yaitu server.go tambahkan:
+> db.Init()
+
+jika tidak terjadi error maka sudah sukses connect ke database
