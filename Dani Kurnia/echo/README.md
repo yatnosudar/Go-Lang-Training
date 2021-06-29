@@ -488,3 +488,126 @@ lalu tambahkan ini di file routes kita:
 > e.POST("/pegawai", controllers.AddPegawai)
 
 disini kita menggunakan method POST dan dengan routes yang sama dengan kita menampilkan data pegawai, jika sudah langsung saja ke aplikasi eksternal untuk menambah data. di Postman kamu hanya perlu Add request kemudian dengan method POST dan di bagian body bisa kita tambahkan dengan parameter dengan key yang sudah kita buat pada file diatas dengan value kita isi sesuai yang diinginkan.
+
+## Update data dengan method PUT
+menggunakan method ini juga butuh aplikasi eksternal, seperti kemarin saya menggunakan postman. tambahkan func ini di **pegawai.model.go**
+```go
+func UpdatePegawai(id int, nama string, alamat string, telepon string) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "UPDATE pegawai SET nama = ?, alamat = ?, telepon = ? WHERE id = ?"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(nama, alamat, telepon, id)
+	if err != nil {
+		return res, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Succes"
+	res.Data = map[string]int64{
+		"rows_affected": rowsAffected,
+	}
+	return res, nil
+}
+```
+jika sebelumnya di method POST kita tidak menggunakan parameter id, disini kita menggunakannya agar kita bisa menentukan rows mana yang akan kita Update nantinya. lalu menggunakan sqlStatement dengan value "UPDATE pegawai SET nama = ?, alamat = ?, telepon = ? WHERE id = ?" yaitu untuk mengubah data dari tabel pegawai dari kolom mana dan dengan id berapa dan meng set kolom dari database dengan masing masing menggunakan **"?"** sebagai place holder seperti diatas.
+
+di prepare dengan variabel stmt. Lalu di execute dengan variabel result, err menggunakan stmt.Exec dan diisi dengan parameter yang berurutan seperti pada sqlStatement nya. Jika saat di method POST kita menggunakan **LastInsertId** ,disini kita menggunakan **RowsAffected** untuk mengetahui berapa kolom yang sudah kita ubah. Jika tidak ada error langsung set up response nya lalu di return.
+
+tambahkan func ini di **pegawai.controlers.go**
+```go
+func UpdatePegawai(c echo.Context) error {
+	id := c.FormValue("id")
+	nama := c.FormValue("nama")
+	alamat := c.FormValue("alamat")
+	telepon := c.FormValue("telepon")
+
+	conv_id, err := strconv.Atoi(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	result, err := models.UpdatePegawai(conv_id, nama, alamat, telepon)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, result)
+}
+```
+Disini kita menampung 4 parameter yang akan dikirim melalui postman, dengan id untuk menentukan row mana yang akan kita update, karena id dari form value itu berupa string, maka kita akan mengkonversinya ke int dengan menggunakan **strconv.Atoi** , lalu menampung hasil dari func di package models tadi kedalam variabel result dan error, jika tidak ada error maka langsung dikembalikkan dengan format json.
+
+lalu tambahkan ini di file routes kita:
+> e.PUT("/pegawai", controllers.UpdatePegawai)
+
+disini kita menggunakan method PUT dan dengan routes yang sama, jika sudah langsung saja ke aplikasi eksternal untuk mengubah data. di Postman kamu hanya perlu Add request kemudian dengan method PUT dan di bagian body bisa kita tambahkan sama seperti pada method POST sebelumnya, hanya saja saat ini kita menambah 1 parameter lagi yaitu id yang bervalue id yang mana akan kita ubah. value yang lain kita isi sesuai yang diinginkan, dan akan menampilkan response rows_affected untuk mengetahui jumlah rows yang diubah.
+
+## Menghapus data dengan method DELETE
+menggunakan method ini juga butuh aplikasi eksternal, seperti kemarin saya menggunakan postman. tambahkan func ini di **pegawai.model.go**
+```go
+func DeletePegawai(id int) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "DELETE FROM pegawai WHERE id = ?"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(id)
+	if err != nil {
+		return res, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Succes"
+	res.Data = map[string]int64{
+		"rows_affected": rowsAffected,
+	}
+
+	return res, nil
+}
+```
+Kali ini kita hanya menggunakan satu parameter yaitu id, yang berfungsi untuk menentukan menghapus data berdasarkan id. Lalu seperti biasa kita membuat variabel res dan inisiasi database. lalu sqlStatement untuk menghapus dari tabel pegawai dengan id ke placeholdernya, lalu di prepare, jika tidak ada error maka akan langsung meng eksekusi parameter id yang ditampung di variabel result. Sama seperti sebelumnya, disni kita menggunakan RowsAffected juga.
+
+tambahkan func ini di **pegawai.controlers.go**
+```go
+func DeletePegawai(c echo.Context) error {
+	id := c.FormValue("id")
+	conv_id, err := strconv.Atoi(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	result, err := models.DeletePegawai(conv_id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, result)
+}
+```
+Disini kita hanya menampung 1 parameter yaitu id  untuk menjadi key saat kita menggunakannya di postman nanti. Lalu di konversi menggunakan strconv.Atoi, jika tidak ada error maka langsung saja memanggil fungsi dari package models dan memasukkan parameter id yang sudah di konversi tadi, jika tidak ada error langsung di return saja dengan format json.
+
+lalu tambahkan ini di file routes kita:
+> e.DELETE("/pegawai", controllers.DeletePegawai)
+
+disini kita menggunakan method DELETE dan routes yang sama, jika sudah di run langsung saja ke postman dan kita bisa melihat data dengan method get dan menentukan data mana yang akan dihapus, jika sudah langsung ganti methodnya dengan DELETE lalu di bagian body kita masukan key yaitu id dengan value id dari data yang kita ingin hapus. dan jika sukses maka di dalam database nya pun ikut terhapus.
