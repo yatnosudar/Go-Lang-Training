@@ -611,3 +611,131 @@ lalu tambahkan ini di file routes kita:
 > e.DELETE("/pegawai", controllers.DeletePegawai)
 
 disini kita menggunakan method DELETE dan routes yang sama, jika sudah di run langsung saja ke postman dan kita bisa melihat data dengan method get dan menentukan data mana yang akan dihapus, jika sudah langsung ganti methodnya dengan DELETE lalu di bagian body kita masukan key yaitu id dengan value id dari data yang kita ingin hapus. dan jika sukses maka di dalam database nya pun ikut terhapus.
+
+## Login
+Kali ini kita akan mencoba membuat API untuk login. Hal pertama yang akan kita lakukan adalah membuat sebuah tabel yaitu tabel users dan diberi kolom id, username dan password. Kali ini kita menggunakan sebuah hash method bernama bycrypt. Penjelasan selengkapnya [Lihat disini](https://pkg.go.dev/golang.org/x/crypto/bcrypt). 
+
+Langsung saja kita install di direktori project kita:
+> go get golang.org/x/crypto/bcrypt
+
+**password.helper.go**
+```go
+package helper
+
+import (
+	"golang.org/x/crypto/bcrypt"
+)
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+func CheckPasswordHash(password, hash string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+```
+Kita membuat sebuah file yang memiliki 2 fungsi, yang pertama HashPassword memiliki parameter password dan return sebuah hash yang dikembalikan dalam bentuk string. Membuat variabel bytes untuk menampung hash, dengan menggunakan package bycrypt untuk men Generate password dalam tipe []byte dan parameter kedua yaitu cost-nya. lalu di return.
+
+func yang kedua yaitu CheckPasswordHash memiliki parameter password dan hash, dengan return value boolean. membuat variabel err dan menggunakan package bycrypt untuk meng CompareHashAndPassword, parameter pertama yaitu hash dalam tipe byte dan yang kedua yaitu password jika ada error langsung return false, err jika tidak ada maka akan return true.
+
+**login.controller.go**
+```go
+func GenerateHashPassword(c echo.Context) error {
+	password := c.Param("password")
+
+	hash, _ := helper.HashPassword(password)
+
+	return c.JSON(http.StatusOK, hash)
+}
+```
+membuat sebuah function di package controller untuk men-GenerateHashPassword, lallu menerima input dari user ke parameter password, membuat variabel hash lalu mengimport dari func HashPassword untuk mengubah input dari user tadi menjadi hash password, di return dalam bentuk json.
+
+tambahkan ini di file routes:
+> e.GET("/generate-hash/:password", controllers.GenerateHashPassword)
+
+disini kita menggunakan method GET dan routes generate-hash dengan parameter password. Lalu di postman kita langsung saja ke localhost kita dengan routes "/generate-hash/" dan setelah "/" kita bisa menambahkan password apapun itu dan saat di send kita akan melihat hasil hash dari bycrypt. Lalu hasil hash tersebut kita copy dan masukkan ke dalam tabel users untuk password.
+
+**login.model.go**
+```go
+package models
+
+import (
+	"database/sql"
+	"echo/db"
+	"echo/helper"
+	"fmt"
+)
+
+type User struct {
+	Id       int    `json:"id"`
+	Username string `json:"username"`
+}
+
+func CheckLogin(username, password string) (bool, error) {
+	var obj User
+	var pwd string
+
+	con := db.CreateCon()
+
+	sqlStatement := "SELECT * FROM users WHERE username = ?"
+
+	err := con.QueryRow(sqlStatement, username).Scan(
+		&obj.Id, &obj.Username, &pwd,
+	)
+
+	if err == sql.ErrNoRows {
+		fmt.Println("Username not found")
+		return false, err
+	}
+
+	if err != nil {
+		fmt.Println("Query error")
+		return false, err
+	}
+
+	match, err := helper.CheckPasswordHash(password, pwd)
+	if !match {
+		fmt.Println("Hash and Password doesn't match!")
+		return false, err
+	}
+
+	return true, nil
+}
+```
+buat di package models, membuat struct User dengan isi Id dan Username, kemudian membuat func CheckLogin dan kita menerima 2 input yaitu username dan password dengan return boolean untuk menentukan apakah terotentikasi atau tidaknya. membuat var obj dari struct user, dan pwd untuk menampung hash. langsung kita inisiasi database, dan sqlStatement untuk mencari data dari tabel users berdasarkan username dan memasukkan place holder"?". langsung eksekusi sqlStatement tadi dengan variabel err menggunakan con.QueryRow, jika ketemu maka kita masukkan ke dalam obj nya. 
+
+Jika error nya adalah sql.ErrNoRows maka akan menampilkan pesan Username no found, dan jika error karena hal lain maka menampilkan pesan Query error. Jika tidak ada error maka kita tampung dalam variabel match dan bisa langsung di check menggunakan fungsi CheckPasswordHash tadi dengan parameter pertama adalah plain password dan kedua adalah untuk hash nya, jika tidak match maka akan mengembalikkan pesan seperti di atas.
+
+**login.controller.go**
+```go
+func CheckLogin(c echo.Context) error {
+	username := c.FormValue("username")
+	password := c.FormValue("password")
+
+	res, err := models.CheckLogin(username, password)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"message": err.Error(),
+		})
+	}
+
+	if !res {
+		return echo.ErrUnauthorized
+	}
+
+	return c.String(http.StatusOK, "Berhasil login!")
+}
+```
+kita membuat sebuah func lagi di package controller untuk meng Check apakah username dan passwordnya sudah terdaftar di database. kita akan menerima inputan dari user, yaitu username dan password. ditampung di variabel res dan mengambil dari fungsi di package models dan mem passing username dan password. Jika ada error maka akan menampilkan pesan error nya, jika tidak ada error maka langsung return dalam bentuk string dan menampilkan pesan Berhasil login.
+
+tambahkan ini di file routes:
+> e.POST("/login", controllers.CheckLogin)
+
+Menggunakan method POST karena karena kita akan menerima inputan dari user yang berupa username dan password, langsung saja coba di postman masuk ke bagian body, lalu ke form data dan memasukkan key username dan password dan memiliki value sesuai pada database, dan dibagian password kita bisa memasukkan plain password kita.
