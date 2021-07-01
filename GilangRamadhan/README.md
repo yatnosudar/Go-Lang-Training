@@ -287,3 +287,127 @@ lalu memanggil function tersebut di file utama kita, yaitu server.go tambahkan:
 > db.Init()
 
 jika tidak terjadi error maka sudah sukses connect ke database
+
+## Menambah data dengan method POST
+dengan method ini dibutuhkan aplikasi bantuan menggunakan postman untuk bisa menambahkan data kali ini. tambahkan func di **pegawai.model.go**
+```go
+func AddPegawai(nama string, alamat string, telepon string) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "INSERT pegawai (nama, alamat, telepon) VALUES (?, ?, ?)"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(nama, alamat, telepon)
+	if err != nil {
+		return res, err
+	}
+
+	lastInsertedId, err := result.LastInsertId()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Succes"
+	res.Data = map[string]int64{
+		"last_inserted_id": lastInsertedId,
+	}
+	return res, nil
+}
+```
+Func **AddPegawai** menerima parameter input sesuai dengan kolom yang ada pada database kita, tetapi tidak dengan Id karena Id akan di set auto increment. Untuk menambah data kita menggunakan sql statement insert ke tabel pegawai dengan kolom seperti di atas dan bervalue dengan parameter sesuai jumlah kolom. Lalu membuat variabel stmt dan err untuk mempersiapkan sqlStatement dengan **con.Prepare** agar siap di eksekusi. Kemudian membuat variabel result untuk mengeksekusi dengan stmt.Exec yang berisi kolom parameter di atas dengan urutan yang sama pada database.
+
+Kemudian membuat lastInsertedID yang bertujuan untuk kita mendapatkan Id terbaru pada data yang telah kita buat. jika tidak ada error maka akan me return response seperti diatas dengan Data yang berisi map seperti di atas.
+
+Tambahkan function ini di file **pegawai.controllers.go**
+```go
+func AddPegawai(c echo.Context) error {
+	nama := c.FormValue("nama")
+	alamat := c.FormValue("alamat")
+	telepon := c.FormValue("telepon")
+
+	result, err := models.AddPegawai(nama, alamat, telepon)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, result)
+}
+```
+Di function ini kita menampung 3 parameter yang akan dikirim oleh aplikasi eksternal, yaitu ada nama, alamat, dan telepon dengan menggunakan **c.FormValue()**. Kemudian membuat variabel result dan err yang akan menampung apa yang dikembalikkan oleh func **AddPegawai** di package models, jika ada error maka akan mengembalikan pesan error, jika tidak maka akan mengembalikan result tadi.
+
+lalu tambahkan ini di file routes kita:
+> e.POST("/pegawai", controllers.AddPegawai)
+
+menggunakan method POST dan dengan routes yang sama dengan  menampilkan data pegawai, jika sudah langsung saja ke aplikasi eksternal untuk menambah data. di Postman kamu hanya perlu Add request kemudian dengan method POST dan di bagian body bisa tambahkan dengan parameter dengan key yang sudah kita buat pada file diatas dengan value kita isi sesuai yang diinginkan
+
+## Update data dengan method PUT
+
+menggunakan method ini juga butuh aplikasi eksternal, seperti kemarin menggunakan postman. tambahkan func ini di **pegawai.model.go**
+```go
+func UpdatePegawai(id int, nama string, alamat string, telepon string) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "UPDATE pegawai SET nama = ?, alamat = ?, telepon = ? WHERE id = ?"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(nama, alamat, telepon, id)
+	if err != nil {
+		return res, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Succes"
+	res.Data = map[string]int64{
+		"rows_affected": rowsAffected,
+	}
+	return res, nil
+}
+```
+jika sebelumnya di method POST tidak menggunakan parameter id, disini  menggunakannya agar  bisa menentukan rows mana yang akan Update nantinya. lalu menggunakan sqlStatement dengan value "UPDATE pegawai SET nama = ?, alamat = ?, telepon = ? WHERE id = ?" yaitu untuk mengubah data dari tabel pegawai dari kolom mana dan dengan id berapa dan meng set kolom dari database dengan masing masing menggunakan **"?"** sebagai place holder seperti diatas.
+
+di prepare dengan variabel stmt. Lalu di execute dengan variabel result, err menggunakan stmt.Exec dan diisi dengan parameter yang berurutan seperti pada sqlStatement nya. Jika saat di method POST menggunakan **LastInsertId** ,disini menggunakan **RowsAffected** untuk mengetahui berapa kolom yang sudah diubah. Jika tidak ada error langsung set up response nya lalu di return.
+
+tambahkan func ini di **pegawai.controlers.go**
+```go
+func UpdatePegawai(c echo.Context) error {
+	id := c.FormValue("id")
+	nama := c.FormValue("nama")
+	alamat := c.FormValue("alamat")
+	telepon := c.FormValue("telepon")
+
+	conv_id, err := strconv.Atoi(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	result, err := models.UpdatePegawai(conv_id, nama, alamat, telepon)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, result)
+}
+```
+ menampung 4 parameter yang akan dikirim melalui postman, dengan id untuk menentukan row mana yang akan  update, karena id dari form value itu berupa string, maka  akan mengkonversinya ke int dengan menggunakan **strconv.Atoi** , lalu menampung hasil dari func di package models tadi kedalam variabel result dan error, jika tidak ada error maka langsung dikembalikkan dengan format json.
+
+lalu tambahkan ini di file routes kita:
+> e.PUT("/pegawai", controllers.UpdatePegawai)
+
+ menggunakan method PUT dan dengan routes yang sama, jika sudah langsung saja ke aplikasi eksternal untuk mengubah data. di Postman kamu hanya perlu Add request kemudian dengan method PUT dan di bagian body bisa kita tambahkan sama seperti pada method POST sebelumnya, hanya saja saat ini kita menambah 1 parameter lagi yaitu id yang bervalue id yang mana akan kita ubah. value yang lain  isi sesuai yang diinginkan, dan akan menampilkan response rows_affected untuk mengetahui jumlah rows yang diubah.
