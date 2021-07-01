@@ -739,3 +739,78 @@ tambahkan ini di file routes:
 > e.POST("/login", controllers.CheckLogin)
 
 Menggunakan method POST karena karena kita akan menerima inputan dari user yang berupa username dan password, langsung saja coba di postman masuk ke bagian body, lalu ke form data dan memasukkan key username dan password dan memiliki value sesuai pada database, dan dibagian password kita bisa memasukkan plain password kita.
+
+## Implementasi JWT
+JWT adalah singkatan dari JSON web token, untuk penjelasan lengkapnya bisa [lihat disini](https://github.com/golang-jwt/jwt). Yang merupakan sebuah package dari golang untuk membuat sebuah token yang memiliki sebuah payload atau data, sehingga token ini bisa dikirimkan di masing-masing request. Langsung saja install di direktori:
+> go get github.com/golang-jwt/jwt
+
+kita ganti tambahkan di func **CheckLogin** di **login.controler.go**
+```go
+func CheckLogin(c echo.Context) error {
+	username := c.FormValue("username")
+	password := c.FormValue("password")
+
+	res, err := models.CheckLogin(username, password)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"message": err.Error(),
+		})
+	}
+
+	if !res {
+		return echo.ErrUnauthorized
+	}
+	// Create token
+
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	// Set claims
+	claims := token.Claims.(jwt.MapClaims)
+	claims["username"] = username
+	claims["level"] = "application"
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"token": t,
+	})
+
+}
+```
+Kita mengganti return dengan pesan "Berhasil login!" kemarin dengan token. Ditampung di variabel token untuk membuat sebuah token dengan jwt. Kemudian membuat variabel claims untuk meng set MapClaims, lalu men-set up payload atau informasi yang akan diberikan, disnin saya memberikan info username, level, dan expire nya di set selama 72 jam.
+
+lalu kita kasih SignedString yang diberi nama "secret", jika ada error maka tampilkan pesannya, jika tidak ada maka kita return tokennya. Lalu test di postman sama ketika login seperti yang kemarin. Jika berhasil maka akan menampilkan token dari jwt.
+
+## Middleware
+Sebelumnya kita sudah membuat token untuk login, kali ini kita akan menentukan routes mana yang akan kita lindungi oleh jwt tersebut yang akan kita berikan autentikasi saat ingin mengaksesnya. Kita bisa membaca dokumentasi lengkapnya [disini](https://echo.labstack.com/middleware/). 
+**middleware.go**
+```go
+package middleware
+
+import (
+	"github.com/labstack/echo/v4/middleware"
+)
+
+var IsAuthenticated = middleware.JWTWithConfig(middleware.JWTConfig{
+	SigningKey: []byte("secret"),
+})
+```
+membuat file baru di package midddleware, mengimport package dari echo middleware. Kemudian membuat variabel IsAuthenticated dengan menggunakan JWTWithConfig dari middleware dan JWTConfig yang diberi SigningKey yang sama seperti di func CheckLogin di package controller.
+
+lalu kita tambahkan di routes yang ingin kita berikan autentikasi:
+> e.GET("/pegawai", controllers.FetchAllPegawai, middleware.IsAuthenticated)
+
+diatas saya memberi autentikasi dari routes pegawai dengan method GET yang bertujuan saat kita ingin melihat data pegawai, maka harus melakukan autentikasi terlebih dahulu.
+
+Jika kita test menggunakan postman maka akan menampilkan pesan "missing or malformed jwt", dimana kita harus memberikan sebuah token pada saat kita login tadi. masuk ke bagian auhorization lalu ganti tipe nya menjadi Bearer token, lalu copy token tadi, jika sudah di send maka akan menampilkan data pegawai.
+
+Middleware tadi bisa kita pasang juga untuk routes yang lain.
+
