@@ -411,3 +411,65 @@ lalu tambahkan ini di file routes kita:
 > e.PUT("/pegawai", controllers.UpdatePegawai)
 
  menggunakan method PUT dan dengan routes yang sama, jika sudah langsung saja ke aplikasi eksternal untuk mengubah data. di Postman kamu hanya perlu Add request kemudian dengan method PUT dan di bagian body bisa kita tambahkan sama seperti pada method POST sebelumnya, hanya saja saat ini kita menambah 1 parameter lagi yaitu id yang bervalue id yang mana akan kita ubah. value yang lain  isi sesuai yang diinginkan, dan akan menampilkan response rows_affected untuk mengetahui jumlah rows yang diubah.
+
+ ## Menghapus data dengan method DELETE
+
+method ini juga butuh aplikasi eksternal, seperti kemarin  menggunakan postman. tambahkan func ini di **pegawai.model.go**
+
+```go
+func DeletePegawai(id int) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "DELETE FROM pegawai WHERE id = ?"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(id)
+	if err != nil {
+		return res, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Succes"
+	res.Data = map[string]int64{
+		"rows_affected": rowsAffected,
+	}
+
+	return res, nil
+}
+```
+Kali ini hanya menggunakan satu parameter yaitu id, yang berfungsi untuk menentukan menghapus data berdasarkan id. Lalu seperti biasa  membuat variabel res dan inisiasi database. lalu sqlStatement untuk menghapus dari tabel pegawai dengan id ke placeholdernya, lalu di prepare, jika tidak ada error maka akan langsung meng eksekusi parameter id yang ditampung di variabel result. Sama seperti sebelumnya, disni kita menggunakan RowsAffected juga.
+
+tambahkan func ini di **pegawai.controlers.go**
+```go
+func DeletePegawai(c echo.Context) error {
+	id := c.FormValue("id")
+	conv_id, err := strconv.Atoi(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	result, err := models.DeletePegawai(conv_id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, result)
+}
+```
+Disini hanya menampung 1 parameter yaitu id  untuk menjadi key saat kita menggunakannya di postman nanti. Lalu di konversi menggunakan strconv.Atoi, jika tidak ada error maka langsung saja memanggil fungsi dari package models dan memasukkan parameter id yang sudah di konversi tadi, jika tidak ada error langsung di return saja dengan format json.
+
+lalu tambahkan ini di file routes kita:
+> e.DELETE("/pegawai", controllers.DeletePegawai)
+
+menggunakan method DELETE dan routes yang sama, jika sudah di run langsung saja ke postman dan kita bisa melihat data dengan method get dan menentukan data mana yang akan dihapus, jika sudah langsung ganti methodnya dengan DELETE lalu di bagian body kita masukan key yaitu id dengan value id dari data yang ingin kita hapus. dan jika sukses maka di dalam database nya pun ikut terhapus.
+
