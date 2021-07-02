@@ -814,3 +814,103 @@ Jika kita test menggunakan postman maka akan menampilkan pesan "missing or malfo
 
 Middleware tadi bisa kita pasang juga untuk routes yang lain.
 
+## Validasi Input User
+Pada dasarnya inputan dari user itu tidak selalu sesuai dengan yang kita harapkan, maka dari itu golang menyediakan sebuah package untuk mem-validasi nya yang bernama Validator. Untuk dokumentasi lengkapnya bisa [lihat disini](https://github.com/go-playground/validator). 
+
+**Instalasi**
+```bash
+go get github.com/go-playground/validator
+```
+**validation.controller.go**
+```go
+package controllers
+
+import (
+	"net/http"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
+)
+
+type Customer struct {
+	Nama   string `validate:"required"`
+	Email  string `validate:"required,email"`
+	Alamat string `validate:"required"`
+	Umur   int    `validate:"gte=13,lte=40"`
+}
+
+func TestStructValidation(c echo.Context) error {
+	v := validator.New()
+
+	customer := Customer{
+		Nama:   "Dani",
+		Email:  "danikurnia@gmail.com",
+		Alamat: "Jl.Pasirluyu",
+		Umur:   17,
+	}
+
+	err := v.Struct(customer)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"message": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Succes"})
+}
+
+func TestVariableValidation(c echo.Context) error {
+	v := validator.New()
+
+	email := "dani@gmail.com"
+
+	err := v.Var(email, "required,email")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"message": "Email not valid",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Succes"})
+}
+```
+Kita akan mencoba untuk mem-validasi input Customer, Membuat struct Customer lalu diberi struct text validate untuk menentukan apa saja yang diperlukan agar bisa tervalidasi, required artinya text tersebut harus diisi, email untuk menyesuaikan dengan format email, gte artinya di bagian Umur yang dimasukkan harus lebih dari 13 dan kurang dari 40. Lalu di func **TestStructValidation** adalah untuk mem validasi dari sebuah struct. membuat sebuah objek v lalu membuat variabel customer untuk mengisi data dari struct Customer. ditampung di variabel err dengan value v.Struct(customer) yaitu validator dalam bentuk struct dengan struct customer. Jika ada error atau isi dari struct tersebut tidak sesuai dengan rules yang kita tetapkan maka akan menampilkan pesan error, jika tidak maka akan tampil pesan succes.
+
+tambah di file routes:
+> e.GET("/test-struct-validation", controllers.TestStructValidation)
+
+Lalu bisa di test di postman
+
+di func yang kedua kita mencoba mem validasi dari variabel. membuat objek v terlebih dahulu lalu membuat variabel email lalu ditampung di variabel err dengan value v.Var(email, "required,email") yaitu validator dalam bentuk variabel dengan variabel email dan  rules nya required,email. Jika tidak variabel email tidak sesuai rule, maka akan tampil pesan Email not valid jika tidak maka menampilkan pesan succes.
+
+tambah di file routes:
+> e.GET("/test-variable-validation", controllers.TestVariableValidation)
+
+## Implementasi validasi ke REST API
+Kita akan meng implementasikannya ke RESTful API yang telah kita buat sebelumnya. 
+```go
+type Pegawai struct {
+	Id      int    `json:"id"`
+	Nama    string `json:"nama" validate:"required"`
+	Alamat  string `json:"alamat" validate:"required"`
+	Telepon string `json:"telepon" validate:"required"`
+}
+```
+yang pertama kita lakukan adalah menambah struct text validate ke dalam struct Pegawai, disini saya hanya memasukkan required. 
+```go
+func AddPegawai(nama string, alamat string, telepon string) (Response, error) {
+	var res Response
+
+	v := validator.New()
+
+	pegawai := Pegawai{
+		Nama:    nama,
+		Alamat:  alamat,
+		Telepon: telepon,
+	}
+	err := v.Struct(pegawai)
+	if err != nil {
+		return res, err
+	}
+```
+Lalu func AddPegawai ini akan menerima variabel dari controller, disini kita memasukkan nilai struct Pegawai dari parameter diatas. dan jika sudah maka tinggal dicoba di postman dan coba untuk tidak mengisi salah satu field, maka yang terjadi adalah error. jika semua field terisi maka akan succes.
