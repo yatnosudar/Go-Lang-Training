@@ -1,8 +1,8 @@
 package main
 
 import (
-	"echo/Rucoy/db"
-	"echo/Rucoy/routes"
+	"echo/RucoyAPI/db"
+	"echo/RucoyAPI/routes"
 )
 
 func main() {

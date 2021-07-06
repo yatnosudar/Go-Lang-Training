@@ -1,7 +1,7 @@
 package models
 
 import (
-	"echo/Rucoy/db"
+	"echo/RucoyAPI/db"
 	"net/http"
 )
 

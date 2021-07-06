@@ -7,10 +7,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func GetDetailCharacters(c echo.Context) error {
+func GetDetailGuild(c echo.Context) error {
 	name := c.Param("name")
 
-	characters, _ := models.GetCharacters(name)
+	guild, _ := models.GetDetailGuild(name)
 
-	return c.JSON(http.StatusOK, characters)
+	return c.JSON(http.StatusOK, guild)
 }

@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"echo/Rucoy/models"
+	"echo/rucoyAPI/models"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

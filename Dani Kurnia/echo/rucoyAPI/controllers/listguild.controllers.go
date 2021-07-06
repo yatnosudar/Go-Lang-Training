@@ -7,8 +7,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func GetNews(c echo.Context) error {
-	result, err := models.GetNewsDetail()
+func GetListGuild(c echo.Context) error {
+	result, err := models.GetListGuild()
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{

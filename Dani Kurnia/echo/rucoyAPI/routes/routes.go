@@ -14,7 +14,12 @@ func Routes() *echo.Echo {
 	e.GET("highscore/distance", controllers.FetchAllTopDistance)
 	e.GET("highscore/magic", controllers.FetchAllTopMagic)
 	e.GET("highscore/defense", controllers.FetchAllTopDefense)
-	e.GET("news/detail", controllers.GetNews)
+	e.GET("news", controllers.GetNews)
+	e.GET("guilds", controllers.GetListGuild)
+	e.GET("characters/:name", controllers.GetDetailCharacters)
+	e.GET("guilds/:name", controllers.GetDetailGuild)
+	e.GET("characters/", controllers.SearchCharacters)
+	e.GET("guilds/", controllers.SearchGuild)
 
 	return e
 }
