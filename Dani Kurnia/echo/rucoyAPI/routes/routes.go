@@ -2,6 +2,7 @@ package routes
 
 import (
 	"echo/rucoyAPI/controllers"
+	"echo/rucoyAPI/middleware"
 
 	"github.com/labstack/echo/v4"
 )
@@ -20,6 +21,8 @@ func Routes() *echo.Echo {
 	e.GET("guilds/:name", controllers.GetDetailGuild)
 	e.GET("characters/", controllers.SearchCharacters)
 	e.GET("guilds/", controllers.SearchGuild)
+
+	e.GET("mycharacters/:name", controllers.GetDetailCharactersPrivate, middleware.IsAuthenticated)
 
 	return e
 }
