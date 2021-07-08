@@ -16,3 +16,17 @@ func FetchAllArsenal(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 
 }
+
+func StoreArsenal(c echo.Context) error {
+	ArsenalName := c.FormValue("arsenalname")
+	CategoryArsenal := c.FormValue("categoryarsenal")
+	Description := c.FormValue("description")
+	Image := c.FormValue("image")
+
+	result, err := models.StoreArsenal(ArsenalName, CategoryArsenal, Description, Image)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, result)
+}

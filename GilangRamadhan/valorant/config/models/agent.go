@@ -107,3 +107,34 @@ func FetchAllAgent() (Response, error) {
 
 	return res, nil
 }
+
+func StoreAgent(NameAgent string, Role string, DescriptionAgent string) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "INSERT agent (nameagent, role, descriptionagent) VALUES (?, ?, ?)"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(NameAgent, Role, DescriptionAgent)
+	if err != nil {
+		return res, err
+	}
+
+	lastInsertedId, err := result.LastInsertId()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Success"
+	res.Data = map[string]int64{
+		"last_inserted_id": lastInsertedId,
+	}
+
+	return res, nil
+}

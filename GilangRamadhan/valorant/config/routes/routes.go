@@ -22,8 +22,11 @@ func Init() *echo.Echo {
 	e.GET("/leaderboards", models.DetailLeaderboards)
 	e.GET("/maps", models.DetailMaps)
 
-	e.GET("/agent/tambah", controllers.FetchAllAgent)
-	e.GET("/arsenal/tambah", controllers.FetchAllArsenal)
+	e.GET("/agent/", controllers.FetchAllAgent)
+	e.GET("/arsenal/", controllers.FetchAllArsenal)
+
+	e.POST("/agent/tambahagent", controllers.StoreAgent)
+	e.POST("/arsenal/tambaharsenal", controllers.StoreArsenal)
 
 	e.POST("/Leaderboards/", models.SearchDetailLeaderboards)
 
