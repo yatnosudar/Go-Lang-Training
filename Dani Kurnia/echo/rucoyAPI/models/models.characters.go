@@ -5,15 +5,17 @@ import (
 	"echo/RucoyAPI/db"
 	"fmt"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type Characters struct {
 	Id         int    `json:"id"`
-	Name       string `json:"name"`
+	Name       string `json:"name" validation:"required"`
 	Level      int    `json:"level"`
 	Guild      string `json:"guild"`
 	LastOnline string `json:"last_online"`
-	Born       string `json:"born"`
+	Born       string `json:"born" validation:"required,datetime"`
 }
 
 type Log struct {
@@ -67,5 +69,75 @@ func GetCharacters(nickname string) (Response, error) {
 		"log":     log,
 	}
 
+	return res, nil
+}
+
+func AddCharacters(name, born string) (Response, error) {
+	var res Response
+	v := validator.New()
+
+	var characters = Characters{
+		Name: name,
+		Born: born,
+	}
+
+	err := v.Struct(characters)
+	if err != nil {
+		return res, err
+	}
+
+	con := db.CreateCon()
+	sqlStatement := "INSERT INTO characters (name, born) VALUES (?, ?)"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(name, born)
+	if err != nil {
+		return res, err
+	}
+
+	lastInsertedId, err := result.LastInsertId()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Succes"
+	res.Data = map[string]int64{
+		"last_inserted_id": lastInsertedId,
+	}
+	return res, nil
+}
+
+func UpdateCharacters(id int, name string) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "UPDATE characters SET name = ?, description = ? WHERE id = ?"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(name, id)
+	if err != nil {
+		return res, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Succes"
+	res.Data = map[string]int64{
+		"rows_affected": rowsAffected,
+	}
 	return res, nil
 }
