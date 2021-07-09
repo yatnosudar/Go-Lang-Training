@@ -138,3 +138,65 @@ func StoreAgent(NameAgent string, Role string, DescriptionAgent string) (Respons
 
 	return res, nil
 }
+
+func UpdateAgent(No int, NameAgent string, Role string, DescriptionAgent string) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "UPDATE agent SET nameagent = ?, role = ?, descriptionagent = ? WHERE no = ?"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(NameAgent, Role, DescriptionAgent, No)
+	if err != nil {
+		return res, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Success"
+	res.Data = map[string]int64{
+		"rows_affected": rowsAffected,
+	}
+
+	return res, nil
+}
+
+func DeleteAgent(No int) (Response, error) {
+	var res Response
+
+	con := db.CreateCon()
+
+	sqlStatement := "DELETE FROM agent WHERE no = ?"
+
+	stmt, err := con.Prepare(sqlStatement)
+	if err != nil {
+		return res, err
+	}
+
+	result, err := stmt.Exec(No)
+	if err != nil {
+		return res, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return res, err
+	}
+
+	res.Status = http.StatusOK
+	res.Message = "Success"
+	res.Data = map[string]int64{
+		"rows_affected": rowsAffected,
+	}
+
+	return res, nil
+}

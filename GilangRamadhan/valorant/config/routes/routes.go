@@ -17,7 +17,7 @@ func Init() *echo.Echo {
 	e.GET("/news", models.GetNews)
 	e.GET("/leaderboards", models.GetLeaderboards)
 
-	e.GET("/maps", models.DetailAgent)
+	e.GET("/agent", models.DetailAgent)
 	e.GET("/arsenal", models.DetailArenal)
 	e.GET("/leaderboards", models.DetailLeaderboards)
 	e.GET("/maps", models.DetailMaps)
@@ -27,6 +27,10 @@ func Init() *echo.Echo {
 
 	e.POST("/agent/tambahagent", controllers.StoreAgent)
 	e.POST("/arsenal/tambaharsenal", controllers.StoreArsenal)
+
+	e.PUT("/agent/update", controllers.UpdateAgent)
+
+	e.DELETE("/agent/delete", controllers.DeleteAgent)
 
 	e.POST("/Leaderboards/", models.SearchDetailLeaderboards)
 
