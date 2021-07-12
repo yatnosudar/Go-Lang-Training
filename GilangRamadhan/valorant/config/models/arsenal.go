@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"valorant/db"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo"
 )
 
 type Weapon struct {

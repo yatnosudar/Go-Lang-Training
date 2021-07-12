@@ -7,7 +7,8 @@ import (
 
 	"valorant/db"
 
-	"github.com/labstack/echo/v4"
+	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo"
 )
 
 type Agent struct {
@@ -17,9 +18,9 @@ type Agent struct {
 
 type SelectAgent struct {
 	No               int    `json:"no"`
-	NameAgent        string `json:"name_agent"`
-	Role             string `json:"role"`
-	DescriptionAgent string `json:"description_agent"`
+	NameAgent        string `json:"name_agent" validate:"required"`
+	Role             string `json:"role" validate:"required"`
+	DescriptionAgent string `json:"description_agent" validate:"required"`
 }
 
 type SpecialAbilities struct {
@@ -75,6 +76,24 @@ func DetailAgent(c echo.Context) error {
 	return c.JSON(http.StatusOK, Agent)
 
 }
+func SearchDetailAgent(c echo.Context) error {
+	var value []SelectAgent
+	SearchAgent := c.QueryParam("search")
+	no, _ := strconv.Atoi(SearchAgent)
+	for _, v := range value {
+		value = append(value, SelectAgent{
+			No:               12,
+			NameAgent:        fmt.Sprintln(v, SearchAgent),
+			Role:             fmt.Sprintln(v, SearchAgent),
+			DescriptionAgent: fmt.Sprintln(v, SearchAgent),
+		})
+	}
+	return c.JSON(http.StatusOK, &SelectAgent{
+		No:        no,
+		NameAgent: fmt.Sprint(SearchAgent),
+	})
+
+}
 
 func FetchAllAgent() (Response, error) {
 	var obj SelectAgent
@@ -108,8 +127,21 @@ func FetchAllAgent() (Response, error) {
 	return res, nil
 }
 
-func StoreAgent(NameAgent string, Role string, DescriptionAgent string) (Response, error) {
+func StoreAgent(nameagent string, role string, descriptionagent string) (Response, error) {
 	var res Response
+
+	v := validator.New()
+
+	peg := SelectAgent{
+		NameAgent:        nameagent,
+		Role:             role,
+		DescriptionAgent: descriptionagent,
+	}
+
+	err := v.Struct(peg)
+	if err != nil {
+		return res, err
+	}
 
 	con := db.CreateCon()
 
@@ -120,7 +152,7 @@ func StoreAgent(NameAgent string, Role string, DescriptionAgent string) (Respons
 		return res, err
 	}
 
-	result, err := stmt.Exec(NameAgent, Role, DescriptionAgent)
+	result, err := stmt.Exec(nameagent, role, descriptionagent)
 	if err != nil {
 		return res, err
 	}
